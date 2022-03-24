@@ -1,0 +1,61 @@
+---
+title: "Scalable Faceting with TrelliscopeJS"
+external_link: ''
+date: '2021-12-12'
+summary: A demonstration of scalable faceting using ggplot2 and TrelliscopeJS R pacakges.
+tags: Data Viz
+image: null
+url_code: ''
+url_pdf: ''
+url_slides: ''
+url_video: ''
+---
+
+In this post, I will use TrelliscopeJS (R package) to demonstrate scalable faceting using an example. 
+
+## Origins
+
+We have multiple origins, including US Gulf, US PNW, Brazil, Ukraine, Argentina from which grain is exported to various destinations.
+
+## Destinations
+
+We have multiple destinations, including China, Japan, Indonesia, South Korea, Middle-East, North Africa, The EU, Vietnam.
+
+## Change in Shares
+
+Shock model shares are the market shares from each of the origins to all destinations during COVID period while the baseline model shares are the market shares from origins to all destinations using a counterfactual scenario of ocean shipping rates had there been no COVID. The model is an optimized Monte Carlo simulation model using logistics, inland transportation, origin price, port elevation costs computed as a freight-on-board (FOB) port values. To this we add ocean shipping rates for routes from origins to destinations. (For the US and Ukraine origins, we have an additional secondary railcar values as well as cost transporting grain via barge).
+
+Then the change in shares are computed as shown below to identify the losers and winners and if so for which destinations/routes.
+
+Change in shares = Shocked shares - Baseline shares 
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 12, fig.height=10}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(trelliscopejs)
+
+dat <- read_excel("diff.xlsx")
+
+dat_sub <- dat %>%
+  mutate(pos = Change_in_Shares >= 0)
+
+ggplot(dat_sub, aes(Origin, Change_in_Shares, fill = pos)) +
+  geom_col(position = "identity", colour = "black", size = 0.25) + coord_flip() + theme_bw() +
+  geom_text(aes(label = Change_in_Shares), hjust = -0.5) +
+  scale_fill_manual(values = c("red", "green"), guide = FALSE) +
+  facet_trelliscope(~ Destination + Month, nrow = 2, ncol = 3, path ="rmarkdown_files")
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=10}
+dat$Month <- factor(dat$Month, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+ggplot(dat, aes(Month, Change_in_Shares, group=Origin)) +
+  geom_line(aes(color=Origin), size = 1.3) +
+  geom_point(aes(linetype=Origin)) + theme_bw() +
+  facet_wrap(~ Destination)
+```
+
+
+
